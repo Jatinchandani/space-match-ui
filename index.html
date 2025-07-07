@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>SpaceMatch - AI Property Search</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      margin: 0;
+      background-color: #f9f9f9;
+      color: #333;
+    }
+
+    .header {
+      background: linear-gradient(90deg, #1e3c72, #2a5298);
+      color: white;
+      padding: 2rem;
+      text-align: center;
+    }
+
+    .header h1 {
+      font-size: 2.5rem;
+      margin: 0;
+    }
+
+    .header p {
+      margin-top: 0.5rem;
+      font-size: 1.2rem;
+    }
+
+    .tagline {
+      font-size: 1rem;
+      font-style: italic;
+      margin-top: 0.25rem;
+      color: #cce3ff;
+    }
+
+    .container {
+      max-width: 960px;
+      margin: auto;
+      padding: 2rem;
+    }
+
+    .stats-bar {
+      font-weight: bold;
+      font-size: 1.1rem;
+      margin-bottom: 1.5rem;
+      text-align: center;
+    }
+
+    .example-queries {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem;
+      justify-content: center;
+      margin-bottom: 2rem;
+    }
+
+    .example-query {
+      background-color: #e3edff;
+      color: #003366;
+      padding: 0.6rem 1.2rem;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background-color 0.2s ease;
+    }
+
+    .example-query:hover {
+      background-color: #c6dbff;
+    }
+
+    .chat-container {
+      background: white;
+      border-radius: 10px;
+      padding: 1.5rem;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    }
+
+    .chat-header h2 {
+      margin: 0 0 0.3rem;
+      font-size: 1.5rem;
+      color: #003366;
+    }
+
+    .chat-messages {
+      max-height: 400px;
+      overflow-y: auto;
+      margin-bottom: 1rem;
+      padding: 1rem 0;
+    }
+
+    .message {
+      margin-bottom: 1rem;
+    }
+
+    .message.user .message-content {
+      background-color: #d2e4ff;
+      text-align: right;
+      margin-left: auto;
+    }
+
+    .message.bot .message-content {
+      background-color: #f0f0f0;
+    }
+
+    .message-content {
+      padding: 0.8rem 1rem;
+      border-radius: 8px;
+      max-width: 80%;
+      display: inline-block;
+    }
+
+    .chat-input {
+      display: flex;
+      gap: 0.5rem;
+    }
+
+    .chat-input input {
+      flex: 1;
+      padding: 0.75rem;
+      font-size: 1rem;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+    }
+
+    .chat-input button {
+      padding: 0.75rem 1.2rem;
+      background-color: #2a5298;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    .chat-input button:hover {
+      background-color: #1e3c72;
+    }
+
+    .property-card {
+      border: 1px solid #e0e0e0;
+      border-radius: 8px;
+      padding: 1rem;
+      margin-bottom: 1rem;
+      background-color: #ffffff;
+    }
+
+    .property-header {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 0.5rem;
+    }
+
+    .property-title {
+      font-weight: bold;
+      font-size: 1.1rem;
+    }
+
+    .property-price {
+      color: #1e3c72;
+      font-weight: bold;
+    }
+
+    .property-details {
+      font-size: 0.9rem;
+      margin-bottom: 0.4rem;
+    }
+
+    .property-amenities {
+      margin-top: 0.5rem;
+    }
+
+    .amenity-tag {
+      background-color: #e3edff;
+      color: #003366;
+      padding: 0.2rem 0.5rem;
+      margin-right: 0.4rem;
+      border-radius: 4px;
+      font-size: 0.8rem;
+    }
+
+    .loading {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.9rem;
+      color: #555;
+    }
+
+    .loading-dots {
+      display: flex;
+      gap: 4px;
+    }
+
+    .loading-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background-color: #2a5298;
+      animation: bounce 1s infinite;
+    }
+
+    .loading-dot:nth-child(2) {
+      animation-delay: 0.2s;
+    }
+
+    .loading-dot:nth-child(3) {
+      animation-delay: 0.4s;
+    }
+
+    @keyframes bounce {
+      0%, 80%, 100% {
+        transform: scale(0.8);
+      }
+      40% {
+        transform: scale(1.2);
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="header">
+    <h1>🏠 SpaceMatch</h1>
+    <p>AI-powered property search that understands exactly what you're looking for</p>
+    <p class="tagline">The Tinder of Commercial Real Estate meets Redfin's Intelligence</p>
+  </div>
+
+  <div class="container">
+    <div class="stats-bar" id="statsBar">
+      <div class="loading">
+        <span>Loading property database...</span>
+        <div class="loading-dots">
+          <div class="loading-dot"></div>
+          <div class="loading-dot"></div>
+          <div class="loading-dot"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="example-queries">
+      <div class="example-query" onclick="setQuery('2 BHK apartment in Mumbai under ₹30000')">
+        2BHK in Mumbai under ₹30000
+      </div>
+      <div class="example-query" onclick="setQuery('pet friendly house with parking in Bangalore')">
+        Pet-friendly in Bangalore
+      </div>
+      <div class="example-query" onclick="setQuery('luxury studio in Gurgaon with gym')">
+        Luxury studio in Gurgaon
+      </div>
+      <div class="example-query" onclick="setQuery('furnished flat in Hyderabad with balcony')">
+        Furnished in Hyderabad
+      </div>
+    </div>
+
+    <div class="chat-container">
+      <div class="chat-header">
+        <h2>Find Your Perfect Space</h2>
+        <p>Tell me what you're looking for and I’ll find the best matches</p>
+      </div>
+
+      <div class="chat-messages" id="chatMessages">
+        <div class="message bot">
+          <div class="message-content">
+            👋 Hi! I'm your AI property assistant. I can help you find flats, villas, PGs, and more in India. Try something like: "2 BHK in Pune under ₹25000 with parking" or "furnished house near metro in Delhi".
+          </div>
+        </div>
+      </div>
+
+      <div class="chat-input">
+        <input type="text" id="messageInput" placeholder="e.g., 1 BHK in Navi Mumbai under ₹20000 with sea view..." />
+        <button onclick="sendMessage()" id="sendButton">Send</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const API_BASE = 'http://127.0.0.1:8000';
+    let isLoading = false;
+
+    window.addEventListener('load', loadStats);
+
+    async function loadStats() {
+      try {
+        const response = await fetch(`${API_BASE}/stats`);
+        const stats = await response.json();
+        document.getElementById('statsBar').innerHTML = `
+          <strong>${stats.total_properties}</strong> properties across <strong>${stats.cities}</strong> cities in India
+        `;
+      } catch (error) {
+        document.getElementById('statsBar').innerHTML = `
+          <span style="color: #ff6b6b;">⚠️ Unable to connect to SpaceMatch API. Please ensure the backend is running.</span>
+        `;
+      }
+    }
+
+    function setQuery(query) {
+      document.getElementById('messageInput').value = query;
+      document.getElementById('messageInput').focus();
+    }
+
+    function addMessage(content, isUser = false) {
+      const messagesContainer = document.getElementById('chatMessages');
+      const messageDiv = document.createElement('div');
+      messageDiv.className = `message ${isUser ? 'user' : 'bot'}`;
+      const messageContent = document.createElement('div');
+      messageContent.className = 'message-content';
+      messageContent.innerHTML = content;
+      messageDiv.appendChild(messageContent);
+      messagesContainer.appendChild(messageDiv);
+      messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    }
+
+    function showLoading() {
+      addMessage(`
+        <div class="loading">
+          <span>Searching properties...</span>
+          <div class="loading-dots">
+            <div class="loading-dot"></div>
+            <div class="loading-dot"></div>
+            <div class="loading-dot"></div>
+          </div>
+        </div>
+      `);
+    }
+
+    function removeLoading() {
+      const messages = document.getElementById('chatMessages');
+      const loadingMessages = messages.querySelectorAll('.loading');
+      loadingMessages.forEach(msg => msg.closest('.message').remove());
+    }
+
+    function formatProperty(property) {
+      const amenityTags = property.amenities.slice(0, 5).map(amenity =>
+        `<span class="amenity-tag">${amenity}</span>`
+      ).join('');
+
+      return `
+        <div class="property-card">
+          <div class="property-header">
+            <div class="property-title">${property.title}</div>
+            <div class="property-price">₹${property.monthly_rent.toLocaleString()}/mo</div>
+          </div>
+          <div class="property-details">
+            📍 ${property.city}, ${property.state} |
+            🏠 ${property.sqft.toLocaleString()} sq ft |
+            🛏️ ${property.bedrooms} bed, 🛁 ${property.bathrooms} bath
+          </div>
+          <div class="property-details">
+            🗓️ Available: ${property.available_date} |
+            📧 ${property.contact_email} |
+            📱 ${property.contact_phone}
+          </div>
+          <div class="property-amenities">${amenityTags}</div>
+        </div>
+      `;
+    }
+
+    async function sendMessage() {
+      const input = document.getElementById('messageInput');
+      const message = input.value.trim();
+      if (!message || isLoading) return;
+
+      isLoading = true;
+      document.getElementById('sendButton').disabled = true;
+      document.getElementById('sendButton').textContent = 'Searching...';
+      addMessage(message, true);
+      input.value = '';
+      showLoading();
+
+      try {
+        const response = await fetch(`${API_BASE}/chat`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ message, max_results: 5 })
+        });
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+        const data = await response.json();
+        removeLoading();
+
+        let botResponse = `<div style="margin-bottom: 1rem;">${data.message}</div>`;
+        if (data.properties?.length) {
+          botResponse += data.properties.map(formatProperty).join('');
+          if (data.total_found > data.properties.length) {
+            botResponse += `<div style="text-align: center; margin-top: 1rem; color: #666;">
+              Showing ${data.properties.length} of ${data.total_found} matches. Refine your search for more specific results.
+            </div>`;
+          }
+        }
+        addMessage(botResponse);
+      } catch (error) {
+        removeLoading();
+        addMessage(`<div style="color: #ff6b6b;">
+          ❌ Unable to connect to the property database.
+          Please make sure the SpaceMatch API is running.
+          <br><br>Error: ${error.message}
+        </div>`);
+      }
+
+      isLoading = false;
+      document.getElementById('sendButton').disabled = false;
+      document.getElementById('sendButton').textContent = 'Send';
+    }
+
+    document.getElementById('messageInput').addEventListener('keypress', function(e) {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        sendMessage();
+      }
+    });
+  </script>
+</body>
+</html>
